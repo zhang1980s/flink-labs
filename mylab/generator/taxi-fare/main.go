@@ -1,0 +1,119 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"os"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	"github.com/google/uuid"
+)
+
+type TaxiFare struct {
+	ID             string    `json:"id"`
+	StartTime      time.Time `json:"startTime"`
+	EndTime        time.Time `json:"endTime"`
+	StartLocation  string    `json:"startLocation"`
+	EndLocation    string    `json:"endLocation"`
+	Distance       float64   `json:"distance"`
+	PassengerCount int       `json:"passengerCount"`
+	FareAmount     float64   `json:"fareAmount"`
+}
+
+func generateTaxiFare() TaxiFare {
+	return TaxiFare{
+		ID:             uuid.NewString(),
+		StartTime:      time.Now().Add(-time.Hour * 24 * time.Duration(rand.Intn(365))), // Within the past year
+		EndTime:        time.Now(),
+		StartLocation:  fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
+		EndLocation:    fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
+		Distance:       rand.Float64() * 50,  // Up to 50 km
+		PassengerCount: rand.Intn(5) + 1,     // 1 to 5 passengers
+		FareAmount:     rand.Float64() * 100, // Up to $100
+	}
+}
+
+func sendToKinesis(streamName string, awsRegion string, fareData []byte) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if err != nil {
+		return fmt.Errorf("error loading AWS config: %w", err)
+	}
+
+	client := kinesis.NewFromConfig(cfg)
+
+	_, err = client.PutRecord(context.TODO(), &kinesis.PutRecordInput{
+		Data:         fareData,
+		StreamName:   &streamName,
+		PartitionKey: aws.String(uuid.NewString()),
+	})
+
+	if err != nil {
+		return fmt.Errorf("error sending to Kinesis: %w", err)
+	}
+
+	return nil
+}
+
+func printDebugFile(filename string, fareData []byte) error {
+	logFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening log file: %w", err)
+	}
+	defer logFile.Close()
+
+	_, err = logFile.WriteString(string(fareData) + "\n")
+	if err != nil {
+		return fmt.Errorf("error writing to log file: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	streamName := "FlinkLabTaxiFareStream"
+	awsRegion := "ap-southeast-1"
+
+	eventsPerSecond := 5
+	reportingInterval := 5 * time.Second
+
+	eventsSentCount := 0
+	ticker := time.NewTicker(reportingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			fmt.Printf("Sent %d events to Kinesis in the last %v\n", eventsSentCount, reportingInterval)
+			eventsSentCount = 0 // Reset count for next interval
+
+		default:
+			taxiFare := generateTaxiFare()
+			fareJSON, _ := json.Marshal(taxiFare)
+
+			err := sendToKinesis(streamName, awsRegion, fareJSON)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				eventsSentCount++
+			}
+
+			// Print Debug log
+			err = printDebugFile("taxifare.log", fareJSON)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			// Calculate sleep time to maintain the desired rate
+			elapsed := time.Since(time.Now())
+			sleepDuration := time.Second/time.Duration(eventsPerSecond) - elapsed
+			if sleepDuration > 0 {
+				time.Sleep(sleepDuration)
+			}
+		}
+	}
+}
