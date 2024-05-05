@@ -26,10 +26,15 @@ type TaxiFare struct {
 }
 
 func generateTaxiFare() TaxiFare {
+	endTime := time.Now()
+
+	// Get a random Start Time within 24 hours of End Time
+	maxOffset := time.Hour * 24
+	startTime := endTime.Add(-time.Duration(rand.Int63n(int64(maxOffset))))
 	return TaxiFare{
 		ID:             uuid.NewString(),
-		StartTime:      time.Now().Add(-time.Hour * 24 * time.Duration(rand.Intn(365))).Format("2006-01-02 15:04:05.999"), // Within the past year
-		EndTime:        time.Now().Format("2006-01-02 15:04:05.999"),
+		StartTime:      startTime.Format("2006-01-02 15:04:05.999"), // Within the 24 hours
+		EndTime:        endTime.Format("2006-01-02 15:04:05.999"),
 		StartLocation:  fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
 		EndLocation:    fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
 		Distance:       rand.Float64() * 50,  // Up to 50 km
