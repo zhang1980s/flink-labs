@@ -15,21 +15,21 @@ import (
 )
 
 type TaxiFare struct {
-	ID             string    `json:"id"`
-	StartTime      time.Time `json:"startTime"`
-	EndTime        time.Time `json:"endTime"`
-	StartLocation  string    `json:"startLocation"`
-	EndLocation    string    `json:"endLocation"`
-	Distance       float64   `json:"distance"`
-	PassengerCount int       `json:"passengerCount"`
-	FareAmount     float64   `json:"fareAmount"`
+	ID             string  `json:"id"`
+	StartTime      string  `json:"starttime"`
+	EndTime        string  `json:"endtime"`
+	StartLocation  string  `json:"startlocation"`
+	EndLocation    string  `json:"endlocation"`
+	Distance       float64 `json:"distance"`
+	PassengerCount int     `json:"passengercount"`
+	FareAmount     float64 `json:"fareamount"`
 }
 
 func generateTaxiFare() TaxiFare {
 	return TaxiFare{
 		ID:             uuid.NewString(),
-		StartTime:      time.Now().Add(-time.Hour * 24 * time.Duration(rand.Intn(365))), // Within the past year
-		EndTime:        time.Now(),
+		StartTime:      time.Now().Add(-time.Hour * 24 * time.Duration(rand.Intn(365))).Format("2006-01-02 15:04:05.999"), // Within the past year
+		EndTime:        time.Now().Format("2006-01-02 15:04:05.999"),
 		StartLocation:  fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
 		EndLocation:    fmt.Sprintf("%f, %f", rand.Float64()*180-90, rand.Float64()*360-180),
 		Distance:       rand.Float64() * 50,  // Up to 50 km
