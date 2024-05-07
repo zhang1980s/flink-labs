@@ -4,7 +4,9 @@ https://github.com/apache/flink-training/tree/master
 
 ## AWS blog
 https://aws.amazon.com/blogs/big-data/get-started-with-flink-sql-apis-in-amazon-kinesis-data-analytics-studio/ (The overall lab cannot be processed due to errors in the table schema, but the provided SQL code can be used as a reference)
-https://aws.amazon.com/blogs/big-data/top-10-flink-sql-queries-to-try-in-amazon-kinesis-data-analytics-studio/
+https://aws.amazon.com/blogs/big-data/top-10-flink-sql-queries-to-try-in-amazon-kinesis-data-analytics-studio/   (SQL reference)
+
+https://aws.amazon.com/blogs/big-data/automate-deployment-and-version-updates-for-amazon-kinesis-data-analytics-applications-with-aws-codepipeline/ (CICD codepipeline)
 
 ## AWS workshop studio - Starters Guide to Local Development with Apache Flink
 https://catalog.us-east-1.prod.workshops.aws/workshops/429cec9e-3222-4943-82f7-1f45c45ed99a/en-US
