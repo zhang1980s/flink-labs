@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -82,6 +83,9 @@ func main() {
 	streamName := "FlinkLabTaxiFareStream"
 	awsRegion := "ap-southeast-1"
 
+	// --debug flag
+	debugEnabled := flag.Bool("debug", false, "Enable debug logging to file")
+
 	eventsPerSecond := 5
 	reportingInterval := 5 * time.Second
 
@@ -106,11 +110,13 @@ func main() {
 				eventsSentCount++
 			}
 
-			// Print Debug log
-			err = printDebugFile("taxifare.log", fareJSON)
+			// Print Debug log (with --debug)
+			if *debugEnabled {
+				err = printDebugFile("taxifare.log", fareJSON)
 
-			if err != nil {
-				fmt.Println(err)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 
 			// Calculate sleep time to maintain the desired rate
