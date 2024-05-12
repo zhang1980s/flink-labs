@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/kinesisanalyticsv2"
 	"github.com/aws/aws-sdk-go-v2/service/kinesisanalyticsv2/types"
 )
@@ -25,9 +26,7 @@ func main() {
 	flag.Parse()
 
 	// Load AWS credentials
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("ap-southeast-1"),
-	)
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		fmt.Println("Error loading AWS configuration:", err)
 		os.Exit(1)
@@ -85,10 +84,66 @@ func main() {
 	}
 }
 
+func getARNofCloudWatchLogSteam(appName string, logGrpName string) (string, error) {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println("Error loading AWS configuration:", err)
+		return "", err
+	}
+
+	cloudwatchClient := cloudwatchlogs.NewFromConfig(cfg)
+
+	// Create msf log group
+	createLogGrpInput := &cloudwatchlogs.CreateLogGroupInput{
+		LogGroupName: aws.String(logGrpName),
+	}
+
+	_, err = cloudwatchClient.CreateLogGroup(context.TODO(), createLogGrpInput)
+	if err != nil {
+		fmt.Printf("Error creating log group: %v", err)
+		return "", err
+	}
+
+	// Create msf log stream
+	createLogStreamInput := &cloudwatchlogs.CreateLogStreamInput{
+		LogGroupName:  aws.String(logGrpName),
+		LogStreamName: aws.String(appName),
+	}
+
+	_, err = cloudwatchClient.CreateLogStream(context.TODO(), createLogStreamInput)
+
+	if err != nil {
+		fmt.Printf("Error creating log stream: %v", err)
+		return "", err
+	}
+
+	// Describe log stream arn
+	describeLogStreamInput := &cloudwatchlogs.DescribeLogStreamsInput{
+		LogGroupName:        aws.String(logGrpName),
+		LogStreamNamePrefix: aws.String(appName),
+	}
+
+	describeLogStreamsOutput, err := cloudwatchClient.DescribeLogStreams(context.TODO(), describeLogStreamInput)
+	if err != nil {
+		fmt.Printf("Error describing the log stream: %v", err)
+		return "", err
+	}
+
+	return *describeLogStreamsOutput.LogStreams[0].Arn, nil
+
+}
+
 func createApplication(appName string, codeBucketARN string, applicationRole string, codeS3FileKey string, cfg aws.Config) error {
 	client := kinesisanalyticsv2.NewFromConfig(cfg)
 
-	// Define application configuration (placeholder - fill in your actual configuration)
+	logStreamARN, err := getARNofCloudWatchLogSteam(appName, "/zzhe/flinkapps")
+
+	if err != nil {
+		fmt.Printf("Error getting arn of logStream: %v", err)
+		return err
+	}
+
+	// Define application configuration
 	applicationCodeConfiguration := &types.ApplicationCodeConfiguration{
 		CodeContentType: types.CodeContentTypeZipfile,
 		CodeContent: &types.CodeContent{
@@ -104,9 +159,21 @@ func createApplication(appName string, codeBucketARN string, applicationRole str
 		RuntimeEnvironment:   types.RuntimeEnvironmentFlink118,
 		ServiceExecutionRole: aws.String(applicationRole),
 		ApplicationConfiguration: &types.ApplicationConfiguration{
+			FlinkApplicationConfiguration: &types.FlinkApplicationConfiguration{
+				MonitoringConfiguration: &types.MonitoringConfiguration{
+					ConfigurationType: types.ConfigurationTypeCustom,
+					LogLevel:          types.LogLevelInfo,
+					MetricsLevel:      types.MetricsLevelOperator,
+				},
+			},
 			ApplicationCodeConfiguration: applicationCodeConfiguration,
 			ApplicationSnapshotConfiguration: &types.ApplicationSnapshotConfiguration{
 				SnapshotsEnabled: aws.Bool(false),
+			},
+		},
+		CloudWatchLoggingOptions: []types.CloudWatchLoggingOption{
+			{
+				LogStreamARN: aws.String(logStreamARN),
 			},
 		},
 	}
@@ -128,11 +195,6 @@ func startApplication(appName string, appRestoreType string, cfg aws.Config) err
 	if appRestoreType == "RESTORE_FROM_LATEST_SNAPSHOT" {
 		startApplicationInput := &kinesisanalyticsv2.StartApplicationInput{
 			ApplicationName: aws.String(appName),
-			// RunConfiguration: &types.RunConfiguration{
-			// 	ApplicationRestoreConfiguration: {
-			// 		ApplicationRestoreType: &types.ApplicationRestoreTypeRestoreFromLatestSnapshot,
-			// 	},
-			// },
 		}
 		_, err := client.StartApplication(context.TODO(), startApplicationInput)
 		if err != nil {
