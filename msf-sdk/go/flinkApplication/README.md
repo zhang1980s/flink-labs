@@ -9,13 +9,10 @@ s3://<BucketName>/flinkapps/<appname>
 ## Application role
 
 ### Permissions
-TBD
 
 #### CW Log
-TBD
 
 #### CW Metrics
-TBD
 
 #### Code Source （S3）
 **粗粒度**
@@ -38,10 +35,30 @@ TBD
 ```
 **细粒度**
 
-TBD
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:DeleteObject",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject"
+            ],
+            "Resource": [ 
+                "arn:aws:s3:::<BucketName>/*",
+                "arn:aws:s3:::<BucketName>"
+            ]
+            "Effect": "Allow"
+        }
+    ]
+}
+```
+
 
 #### Application Source and Destination
-TBD
+Depends on the related applications.
 
 
 ### Trust relationships
