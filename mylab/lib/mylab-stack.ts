@@ -4,7 +4,10 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as kinesis from 'aws-cdk-lib/aws-kinesis';
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as rds from 'aws-cdk-lib/aws-rds'
+import * as kinesisanalyticsv2 from 'aws-cdk-lib/aws-kinesisanalyticsv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+// import * as rds from 'aws-cdk-lib/aws-rds'
 
 
 export class MylabStack extends cdk.Stack {
@@ -55,55 +58,72 @@ export class MylabStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY
     })
 
-    const flinkLabDBPrivateSubnetGroup = new rds.SubnetGroup(this, 'FlinkLabDBPrivateSubnetGroup',{
-      vpc: flinkLabVpc,
-      description: 'Subnet group for Flink Lab Aurora PostgreSQL (private)',
-      subnetGroupName: 'FlinkLabPgsqlPrivateSubnetGroup',
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-      },
-      removalPolicy: cdk.RemovalPolicy.DESTROY
+    // Flink Applications
+
+    // const flinkApp1Role = new iam.Role(this, 'FlinkApp1Role', {
+    //   assumedBy: new iam.ServicePrincipal('kinesisanalytics.amazonaws.com'),
+    //   managedPolicies: [
+    //     iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
+    //   ]
+    // })
+
+    const app1 = new kinesisanalyticsv2.CfnApplication(this, 'app1', {
+      runtimeEnvironment: 'FLINK-1_18',
+      serviceExecutionRole: 'arn:aws:iam::894855526703:role/temp-flink-application',
+      applicationName: 'app1',
     })
 
-    const flinkLabDBPublicSubnetGroup = new rds.SubnetGroup(this, 'FlinkLabDBPublicSubnetGroup',{
-      vpc: flinkLabVpc,
-      description: 'Subnet group for Flink Lab Aurora PostgreSQL (public)',
-      subnetGroupName: 'FlinkLabPgsqlPublicSubnetGroup',
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC,
-      },
-      removalPolicy: cdk.RemovalPolicy.DESTROY
-    })
 
-    const flinkLabDBSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabDBSecurityGroup',{
-      vpc: flinkLabVpc,
-      description: 'Security group for the Flink Lab Aurora PostgreSQL database',
-      allowAllOutbound: true,
-    })
 
-    flinkLabDBSecurityGroup.addIngressRule(
-      ec2.Peer.ipv4('10.6.0.0/16'),
-      ec2.Port.POSTGRES,
-      'Allow PostgreSQL from within the VPC'
-    )
-    const flinkLabManageFlinkStudioSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabManageFlinkStudioSecurityGroup',{
-      vpc: flinkLabVpc,
-      description: 'Security group for the Flink Lab Managed Flink Studio',
-      allowAllOutbound: true,
-    })
+    // const flinkLabDBPrivateSubnetGroup = new rds.SubnetGroup(this, 'FlinkLabDBPrivateSubnetGroup',{
+    //   vpc: flinkLabVpc,
+    //   description: 'Subnet group for Flink Lab Aurora PostgreSQL (private)',
+    //   subnetGroupName: 'FlinkLabPgsqlPrivateSubnetGroup',
+    //   vpcSubnets: {
+    //     subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    //   },
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY
+    // })
 
-    const flinkLabBastionSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabBastionSecurityGroup',{
-      vpc: flinkLabVpc,
-      description: 'Security group for the Bastion EC2',
-      allowAllOutbound: true,
-    })
+    // const flinkLabDBPublicSubnetGroup = new rds.SubnetGroup(this, 'FlinkLabDBPublicSubnetGroup',{
+    //   vpc: flinkLabVpc,
+    //   description: 'Subnet group for Flink Lab Aurora PostgreSQL (public)',
+    //   subnetGroupName: 'FlinkLabPgsqlPublicSubnetGroup',
+    //   vpcSubnets: {
+    //     subnetType: ec2.SubnetType.PUBLIC,
+    //   },
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY
+    // })
 
-    flinkLabBastionSecurityGroup.addIngressRule(
-      ec2.Peer.ipv4('0.0.0.0/0'),
-      ec2.Port.SSH,
-      'Allow SSH from public internet'
+    // const flinkLabDBSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabDBSecurityGroup',{
+    //   vpc: flinkLabVpc,
+    //   description: 'Security group for the Flink Lab Aurora PostgreSQL database',
+    //   allowAllOutbound: true,
+    // })
 
-    )
+    // flinkLabDBSecurityGroup.addIngressRule(
+    //   ec2.Peer.ipv4('10.6.0.0/16'),
+    //   ec2.Port.POSTGRES,
+    //   'Allow PostgreSQL from within the VPC'
+    // )
+    // const flinkLabManageFlinkStudioSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabManageFlinkStudioSecurityGroup',{
+    //   vpc: flinkLabVpc,
+    //   description: 'Security group for the Flink Lab Managed Flink Studio',
+    //   allowAllOutbound: true,
+    // })
+
+    // const flinkLabBastionSecurityGroup = new ec2.SecurityGroup(this, 'FlinkLabBastionSecurityGroup',{
+    //   vpc: flinkLabVpc,
+    //   description: 'Security group for the Bastion EC2',
+    //   allowAllOutbound: true,
+    // })
+
+    // flinkLabBastionSecurityGroup.addIngressRule(
+    //   ec2.Peer.ipv4('0.0.0.0/0'),
+    //   ec2.Port.SSH,
+    //   'Allow SSH from public internet'
+
+    // )
     /////////////////////////////////////////////////////////////
     // Provisioned Cluster
     // const flinkLabDBCluster = new rds.DatabaseCluster(this, 'FlinkLabDBCluster', {
@@ -141,18 +161,18 @@ export class MylabStack extends cdk.Stack {
 
     //////////////////////////////////////////////////////////////////
     // Serverless V2 instance
-    const flinkLabDBCluster = new rds.DatabaseCluster(this, 'FlinkLabDBCluster', {
-      vpc: flinkLabVpc,
-      engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_15_2
-      }),
-      writer: rds.ClusterInstance.serverlessV2('writer'),
-      subnetGroup: flinkLabDBPublicSubnetGroup,
-      securityGroups: [
-        flinkLabDBSecurityGroup,
-      ],
-      parameterGroup: rds.ParameterGroup.fromParameterGroupName(this,'ParameterGroup', 'default.aurora-postgresql15')
-    })
+    // const flinkLabDBCluster = new rds.DatabaseCluster(this, 'FlinkLabDBCluster', {
+    //   vpc: flinkLabVpc,
+    //   engine: rds.DatabaseClusterEngine.auroraPostgres({
+    //     version: rds.AuroraPostgresEngineVersion.VER_15_2
+    //   }),
+    //   writer: rds.ClusterInstance.serverlessV2('writer'),
+    //   subnetGroup: flinkLabDBPublicSubnetGroup,
+    //   securityGroups: [
+    //     flinkLabDBSecurityGroup,
+    //   ],
+    //   parameterGroup: rds.ParameterGroup.fromParameterGroupName(this,'ParameterGroup', 'default.aurora-postgresql15')
+    // })
 
 
 
