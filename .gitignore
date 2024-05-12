@@ -3,3 +3,4 @@ mylab/generator/taxi-fare/taxi-fare
 msf-sdk/go/flinkApplication/flinkApplication
 msf-sdk/go/create-application
 awsDocLab
+.vscode
