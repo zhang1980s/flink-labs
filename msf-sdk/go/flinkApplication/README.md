@@ -96,16 +96,16 @@ https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.htm
 flinkApplication --action start (TBD start from snapshot)
 https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_StartApplication.html
 
-flinkApplication --action status (TBD)
+flinkApplication --action status
 https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_DescribeApplication.html
 
-flinkApplication --action stop (TBD)
+flinkApplication --action stop
 https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_StopApplication.html
 
 flinkApplication --action update (TBD)
 https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_UpdateApplication.html
 
-flinkApplication --action snapshot (TBD)
+flinkApplication --action snapshot
 https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplicationSnapshot.html
 
 ```
