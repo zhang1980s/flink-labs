@@ -2,8 +2,14 @@
 ## flink official
 https://github.com/apache/flink-training/tree/master
 
+## AWS Documentation
+https://docs.aws.amazon.com/managed-flink/latest/java/getting-started.html
+
+https://github.com/awslabs/managed-service-for-apache-flink-blueprints.git
+
 ## AWS blog
 https://aws.amazon.com/blogs/big-data/get-started-with-flink-sql-apis-in-amazon-kinesis-data-analytics-studio/ (The overall lab cannot be processed due to errors in the table schema, but the provided SQL code can be used as a reference)
+
 https://aws.amazon.com/blogs/big-data/top-10-flink-sql-queries-to-try-in-amazon-kinesis-data-analytics-studio/   (SQL reference)
 
 https://aws.amazon.com/blogs/big-data/automate-deployment-and-version-updates-for-amazon-kinesis-data-analytics-applications-with-aws-codepipeline/ (CICD codepipeline)
@@ -14,7 +20,11 @@ https://catalog.us-east-1.prod.workshops.aws/workshops/429cec9e-3222-4943-82f7-1
 ## Product page of Ali Cloud
 https://cn.aliyun.com/product/bigdata/sc?from_alibabacloud=
 
-## My lab
+
+## AWS DOC Labs
+https://docs.aws.amazon.com/managed-flink/latest/java/getting-started.html
+
+## My lab (WIP)
 
 ### path
 cd mylab/generator/taxi-fare
